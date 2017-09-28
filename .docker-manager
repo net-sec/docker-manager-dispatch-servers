@@ -1,0 +1,75 @@
+containerDefaults:
+  dns: 172.17.0.1
+  restart: always
+  swappiness: 0
+
+
+container:
+
+  kolab:
+    maxContainers: 1
+    image: net-sec/kolab:7
+    hostname: mail
+    domainname: net-sec.ch
+    volumes:
+      - source: /lib/modules
+        target: /lib/modules:ro
+      - source: /home/claudio/docker/kolab
+        target: /data:rw
+      - source: /etc/letsencrypt/live/mail.net-sec.ch
+        target: /etc/letsencrypt/live/mail.net-sec.ch:ro
+      - source: /etc/letsencrypt/archive/mail.net-sec.ch
+        target: /etc/letsencrypt/archive/mail.net-sec.ch:ro
+    environment:
+      - TZ=Europe/Zurich
+      - CERT_PATH=/etc/letsencrypt/live
+    expose:
+      - 80
+      - 443
+      - 25
+      - 587
+      - 110
+      - 995
+      - 143
+      - 993
+      - 4190
+      - 389
+    portMapping:
+      - 993:993
+      - 587:587
+      - 143:143
+      - "25:25"
+    nginx:
+      backendPort: 443
+    cap_add:
+      - NET_ADMIN
+
+  heinz:
+    maxContainers: 1
+    image: registry-0:5000/net-sec/elasticsearch-kibana:kibana4
+    sourceVolumes:
+      - source: /home/claudio/docker/elasticsearch-base-kibana4
+        target: /home/claudio/docker/elasticsearch-heinz
+    volumes:
+      - source: /home/claudio/docker/elasticsearch-heinz/elasticsearch
+        target: /home/elasticsearch/elasticsearch/data
+        uid: 1000
+    expose:
+      - 9200
+      - 5601
+    environment:
+      - KIBANA_BASE_PATH="/heinz/kibana"
+    nginx:
+      backendPort:
+        - port: 5601
+          name: kibana
+        - port: 9200
+          name: elasticsearch
+
+  hugo-rechtsberatung-walser:
+    maxContainers: 1
+    image: registry-0:5000/net-sec/hugo-rechtsberatung-walser:latest
+    expose:
+      - 80
+    nginx:
+      backendPort: 80
